@@ -1,46 +1,722 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FortRoyal 2D</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Platix - Developer, founder, and operator of my own projects. Building projects, software, and communities.">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Tutlix · Developer & FortRoyal Owner</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: #0a0a0a;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background-color: #0a0a0a;
+      color: #e4e4e4;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: -0.01em;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ----- scroll animations ----- */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.15, 0.85, 0.3, 1.05), transform 0.7s cubic-bezier(0.15, 0.85, 0.3, 1.05);
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .fade-in-delay-1 { transition-delay: 0.1s; }
+    .fade-in-delay-2 { transition-delay: 0.2s; }
+    .fade-in-delay-3 { transition-delay: 0.3s; }
+    .fade-in-delay-4 { transition-delay: 0.4s; }
+    .fade-in-delay-5 { transition-delay: 0.5s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* ----- navigation ----- */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background-color: rgba(10, 10, 10, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 2rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+      color: #f0f0f0;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .logo span {
+      color: #b0b0b0;
+      font-weight: 450;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #a0a0a0;
+      font-size: 0.95rem;
+      font-weight: 450;
+      transition: color 0.2s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links a:hover {
+      color: #e0e0e0;
+    }
+
+    .contact-btn {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: transparent;
+      color: #e0e0e0;
+      padding: 0.5rem 1.3rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 480;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .contact-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: #e0e0e0;
+      font-size: 1.6rem;
+      cursor: pointer;
+      padding: 0.2rem;
+    }
+
+    /* ----- hero ----- */
+    .hero {
+      padding: 5rem 0 4.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .hero-pretitle {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      color: #808080;
+      margin-bottom: 1.8rem;
+      font-weight: 500;
+    }
+
+    .hero h1 {
+      font-size: clamp(3.5rem, 8vw, 5.5rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: #f5f5f5;
+      line-height: 1.05;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero-tagline {
+      font-size: 1.15rem;
+      color: #a8a8a8;
+      font-weight: 420;
+      margin-bottom: 1rem;
+      max-width: 600px;
+    }
+
+    .hero-description {
+      color: #888;
+      font-size: 0.95rem;
+      max-width: 540px;
+      margin-bottom: 2.2rem;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: #f5f5f5;
+      color: #0a0a0a;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 40px;
+      font-weight: 550;
+      font-size: 0.9rem;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-primary:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #e0e0e0;
+      padding: 0.75rem 1.8rem;
+      border-radius: 40px;
+      font-weight: 480;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ----- sections ----- */
+    section {
+      padding: 5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 580;
+      letter-spacing: -0.02em;
+      color: #f0f0f0;
+      margin-bottom: 0.7rem;
+    }
+
+    .section-sub {
+      color: #888;
+      font-size: 0.95rem;
+      margin-bottom: 2.8rem;
+    }
+
+    /* ----- projects editorial grid ----- */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .project-card {
+      background: #0f0f0f;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      padding: 1.8rem;
+      transition: border-color 0.2s, background 0.2s;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .project-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      background: #121212;
+    }
+
+    .project-card.featured {
+      grid-column: span 2;
+      grid-row: span 1;
+      background: #111111;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .project-role {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: #7a7a7a;
+      margin-bottom: 0.8rem;
+      font-weight: 500;
+    }
+
+    .project-name {
+      font-size: 1.7rem;
+      font-weight: 580;
+      letter-spacing: -0.02em;
+      color: #f2f2f2;
+      margin-bottom: 0.6rem;
+    }
+
+    .project-desc {
+      color: #a0a0a0;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+
+    .project-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.8rem;
+      font-size: 0.85rem;
+      color: #777;
+    }
+
+    .status-badge {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.25rem 0.8rem;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #b0b0b0;
+    }
+
+    .project-link {
+      text-decoration: none;
+      color: #c0c0c0;
+      font-weight: 480;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+      margin-top: 0.2rem;
+    }
+
+    .project-link:hover {
+      color: #ffffff;
+    }
+
+    .arrow-icon {
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .project-link:hover .arrow-icon {
+      transform: translateX(3px);
+    }
+
+    /* ----- skills tags with icons ----- */
+    .skills-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .skill-tag {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cccccc;
+      padding: 0.55rem 1.4rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 460;
+      letter-spacing: -0.01em;
+      transition: background 0.2s, border-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .skill-tag:hover {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .skill-icon {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .skill-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* ----- about ----- */
+    .about-text {
+      max-width: 620px;
+      color: #b0b0b0;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    /* ----- contact ----- */
+    .discord-contact {
+      background: #0f0f0f;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.2s, background 0.2s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .discord-contact:hover {
+      border-color: rgba(88, 101, 242, 0.4);
+      background: #111318;
+    }
+
+    .discord-icon-wrapper {
+      background: #5865F2;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .discord-icon-wrapper svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+    }
+
+    .discord-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .discord-username {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #f0f0f0;
+      letter-spacing: -0.01em;
+    }
+
+    .discord-label {
+      font-size: 0.8rem;
+      color: #888;
+      margin-top: 0.1rem;
+    }
+
+    /* ----- footer ----- */
+    .footer {
+      padding: 2.5rem 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #d0d0d0;
+    }
+
+    .copyright {
+      color: #666;
+      font-size: 0.85rem;
+    }
+
+    /* ----- responsive ----- */
+    @media (max-width: 900px) {
+      .projects-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .project-card.featured {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .container, .nav-inner {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+      .nav-links {
+        display: none;
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .projects-grid {
+        grid-template-columns: 1fr;
+      }
+      .project-card.featured {
+        grid-column: span 1;
+      }
+      .hero h1 {
+        font-size: 3rem;
+      }
+    }
+
+    /* mobile menu simple state (hidden by default) */
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      background: #0a0a0a;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 1rem 2rem;
+    }
+    .mobile-menu a {
+      padding: 0.7rem 0;
+      color: #b0b0b0;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .mobile-menu.active {
+      display: flex;
+    }
+  </style>
 </head>
 <body>
   <header class="nav">
-    <div class="menu-toggle">☰</div>
-    <nav>
-      <a href="#features">Features</a>
-      <a href="#download">Download</a>
-      <a href="https://discord.gg/fortroyal-2d-1381593612852400209">Discord</a>
-    </nav>
+    <div class="nav-inner">
+      <a href="#" class="logo">Tutlix</a>
+      <nav class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#projects">Projects</a>
+        <a href="#skills">Skills</a>
+        <a href="#about">About</a>
+      </nav>
+      <a href="#contact" class="contact-btn">Contact</a>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#home">Home</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#about">About</a>
+    </div>
   </header>
 
-  <main class="hero">
-    <h1>FortRoyal 2D</h1>
-    <p>Fast-paced 2D Shooter</p>
-    <p>Battle bots, survive events, and dominate the arena.</p>
-    <div class="btn-group">
-      <a class="btn" id="downloadBtn">Download</a>
-      <a class="btn discord" href="https://discord.gg">Discord</a>
-    </div>
+  <main>
+    <!-- Hero -->
+    <section id="home" class="hero">
+      <div class="container">
+        <div class="hero-pretitle fade-in">DEVELOPER / FOUNDER</div>
+        <h1 class="fade-in fade-in-delay-1">Tutlix</h1>
+        <p class="hero-tagline fade-in fade-in-delay-2">Building projects, software and communities.</p>
+        <p class="hero-description fade-in fade-in-delay-3">Developer and founder behind several personal projects focused on hosting, Discord, Minecraft, and software development.</p>
+        <div class="hero-actions fade-in fade-in-delay-4">
+          <a href="#projects" class="btn-primary">View Projects <span>↓</span></a>
+          <a href="#about" class="btn-secondary">About Tutlix</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section id="projects">
+      <div class="container">
+        <h2 class="section-title fade-in">Projects</h2>
+        <p class="section-sub fade-in fade-in-delay-1">Own platforms, bots, and communities.</p>
+        <div class="projects-grid">
+          <!-- FortRoyal featured -->
+          <div class="project-card featured fade-in fade-in-delay-1">
+            <div class="project-role">Founder</div>
+            <div class="project-name">FortRoyal</div>
+            <p class="project-desc">A modern online world and community experience.</p>
+            <div class="project-meta">
+              <a href="https://fortroyal-2d.serverix.host/home" target="_blank" rel="noopener noreferrer" class="project-link">fortroyal-2d.serverix.host/home <span class="arrow-icon">↗</span></a>
+            </div>
+          </div>
+
+          <!-- AntiScamBot -->
+          <div class="project-card fade-in fade-in-delay-2">
+            <div class="project-role">Supporter Team</div>
+            <div class="project-name">AntiScamBot</div>
+            <p class="project-desc">Security-focused support and community protection.</p>
+            <div class="project-meta">
+              <a href="https://antiscambot.xyz/" target="_blank" rel="noopener noreferrer" class="project-link">antiscambot.xyz <span class="arrow-icon">↗</span></a>
+            </div>
+          </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section id="skills">
+      <div class="container">
+        <h2 class="section-title fade-in">Tech Stack</h2>
+        <p class="section-sub fade-in fade-in-delay-1">Technologies I work with</p>
+        <div class="skills-cloud">
+          <span class="skill-tag fade-in fade-in-delay-1">
+            <span class="skill-icon" style="background:#1f8fff;border-radius:50%;width:20px;height:20px;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">P</span>
+            Python
+          </span>
+          <span class="skill-tag fade-in fade-in-delay-1">
+            <span class="skill-icon" style="background:#4da94d;border-radius:50%;width:20px;height:20px;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">N</span>
+            Node.js
+          </span>
+          <span class="skill-tag fade-in fade-in-delay-2">
+            <span class="skill-icon" style="background:#e34c26;border-radius:50%;width:20px;height:20px;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">H</span>
+            HTML
+          </span>
+          <span class="skill-tag fade-in fade-in-delay-2">
+            <span class="skill-icon" style="background:#2965f1;border-radius:50%;width:20px;height:20px;color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">C</span>
+            CSS
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about">
+      <div class="container">
+        <h2 class="section-title fade-in">About Tutlix</h2>
+        <div class="about-text fade-in fade-in-delay-1">
+          Tutlix focuses on software development, web development, and building digital projects. Alongside application development, personal platforms, bots, and gaming projects are also created.
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact">
+      <div class="container">
+        <h2 class="section-title fade-in">Have a project in mind?</h2>
+        <p class="section-sub fade-in fade-in-delay-1">You have an idea, a project, or want to collaborate?</p>
+        
+        <a href="https://discord.com/users/1326512995853008945" 
+           target="_blank" 
+           rel="noopener noreferrer" 
+           class="discord-contact fade-in fade-in-delay-2">
+          <div class="discord-icon-wrapper">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+          </div>
+          <div class="discord-info">
+            <span class="discord-username">@real_tutlix</span>
+            <span class="discord-label">Discord · Direct Message</span>
+          </div>
+        </a>
+      </div>
+    </section>
   </main>
 
-  <section id="features" class="section">
-    <h2>Game Info</h2>
-    <p>Status: Online</p>
-    <p>Version: v4.0.1 Beta</p>
-  </section>
-
-  <section id="download" class="section">
-    <h2>Download FortRoyal 2D</h2>
-    <a class="btn download" id="downloadBtn2">Download on itch.io</a>
-  </section>
-
-  <footer>
-    <p>© FortRoyal Community</p>
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-links">
+        <a href="#projects">Projects</a>
+        <a href="#skills">Skills</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="copyright">© 2026 Tutlix</div>
+    </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script>
+    (function() {
+      // Mobile menu toggle
+      const mobileBtn = document.getElementById('mobileMenuBtn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      if (mobileBtn && mobileMenu) {
+        mobileBtn.addEventListener('click', () => {
+          mobileMenu.classList.toggle('active');
+        });
+        const links = mobileMenu.querySelectorAll('a');
+        links.forEach(link => {
+          link.addEventListener('click', () => {
+            mobileMenu.classList.remove('active');
+          });
+        });
+      }
+
+      // Scroll animations - Intersection Observer
+      const fadeElements = document.querySelectorAll('.fade-in');
+      
+      if (fadeElements.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              // Optional: keep observing or unobserve - unobserve for performance
+              observer.unobserve(entry.target);
+            }
+          });
+        }, {
+          threshold: 0.1,
+          rootMargin: '0px 0px -30px 0px'
+        });
+
+        fadeElements.forEach(el => observer.observe(el));
+      }
+    })();
+  </script>
 </body>
 </html>
+
