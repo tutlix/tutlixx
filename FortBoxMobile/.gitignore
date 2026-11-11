@@ -6,3 +6,5 @@ Logs/
 UserSettings/
 *.csproj
 *.sln
+# never commit the signing password (put it in the GitHub secret ANDROID_KEYSTORE_PASS)
+Signing/password.txt

@@ -323,7 +323,7 @@ namespace FortBox
             }
             b.button = rt.gameObject.AddComponent<Button>();
             b.button.transition = Selectable.Transition.None;
-            b.button.onClick.AddListener(() => { if (!b.disabled && onClick != null) onClick(); });
+            b.button.onClick.AddListener(() => { if (b.disabled) return; Sfx.Click(); if (onClick != null) onClick(); });
             b.Refresh();
             return b;
         }

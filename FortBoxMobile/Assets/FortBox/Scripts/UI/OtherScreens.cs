@@ -713,6 +713,8 @@ namespace FortBox
                 fpsBtn.SetLabel("FRAME RATE: " + Settings.Fps);
             }, 18);
             fpsBtn.GetComponent<RectTransform>().Size(-1, 56);
+            Ui.Section(lc, "App version " + Application.version);
+            Ui.Button(lc, "CHECK FOR UPDATES", Ui.Style.Secondary, "refresh", () => AppUpdater.CheckNow(), 18).GetComponent<RectTransform>().Size(-1, 56);
             Ui.Section(lc, "Account");
             Ui.Label(lc, "Signed in as " + Session.Username, 18, Ui.Text2).rectTransform.Size(-1, 30);
             Ui.Button(lc, "SIGN OUT", Ui.Style.Danger, "logout", () =>
@@ -733,6 +735,10 @@ namespace FortBox
             Ui.Slide(rc, "Button opacity", 0.3f, 1f, Settings.ControlsAlpha, v => Settings.ControlsAlpha = v, v => Mathf.RoundToInt(v * 100) + "%");
             Ui.Check(rc, "Invert look up/down", Settings.InvertY, v => Settings.InvertY = v);
             Ui.Check(rc, "Auto-fire when the crosshair is on an enemy", Settings.AutoFire, v => Settings.AutoFire = v);
+            Ui.Section(rc, "Sound");
+            Ui.Slide(rc, "Music", 0f, 1f, Sfx.MusicVol, v => Sfx.MusicVol = v, v => Mathf.RoundToInt(v * 100) + "%");
+            Ui.Slide(rc, "Effects (guns, explosions)", 0f, 1f, Sfx.EffectsVol, v => Sfx.EffectsVol = v, v => Mathf.RoundToInt(v * 100) + "%");
+            Ui.Slide(rc, "Menu clicks", 0f, 1f, Sfx.UiVol, v => Sfx.UiVol = v, v => Mathf.RoundToInt(v * 100) + "%");
         }
 
         public override void OnShow()

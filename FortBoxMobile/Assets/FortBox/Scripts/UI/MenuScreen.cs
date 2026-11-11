@@ -47,6 +47,7 @@ namespace FortBox
         readonly List<Ui.Btn> diffBtns = new List<Ui.Btn>();
         readonly Dictionary<string, Image> cardBorders = new Dictionary<string, Image>();
         bool starting;
+        Ui.Btn friendsNav, groupsNav;
 
         public override void Build()
         {
@@ -77,6 +78,8 @@ namespace FortBox
 
             var nav = Ui.Node(rail, "nav").Place(0, 0, 1, 1, 10, 80, 10, 272);
             nav.VList(2, 0);
+            friendsNav = Nav(nav, "Friends", "users", () => App.Show<FriendsScreen>());
+            groupsNav = Nav(nav, "Group chat", "chat", () => App.Show<GroupsScreen>());
             Nav(nav, "Daily quests", "star", () => App.Show<QuestsScreen>());
             Nav(nav, "Shop", "shop", () => App.Show<ShopScreen>());
             Nav(nav, "Leaderboard", "trophy", () => App.Show<LeaderboardScreen>());
@@ -153,7 +156,7 @@ namespace FortBox
             BuildPlayModal();
         }
 
-        void Nav(Transform parent, string label, string icon, UnityEngine.Events.UnityAction a)
+        Ui.Btn Nav(Transform parent, string label, string icon, UnityEngine.Events.UnityAction a)
         {
             var b = Ui.Button(parent, label.ToUpperInvariant(), Ui.Style.Ghost, icon, a, 17);
             b.GetComponent<RectTransform>().Size(-1, 54);
@@ -161,6 +164,16 @@ namespace FortBox
             row.childAlignment = TextAnchor.MiddleLeft;
             row.padding = new RectOffset(12, 0, 0, 0);
             row.spacing = 14;
+            return b;
+        }
+
+        public void RefreshBadges()
+        {
+            int fr = Social.FriendRequests, un = Social.UnreadTotal;
+            friendsNav.SetLabel(fr > 0 ? "FRIENDS (" + fr + ")" : "FRIENDS");
+            groupsNav.SetLabel(un > 0 ? "GROUP CHAT (" + un + ")" : "GROUP CHAT");
+            friendsNav.style = fr > 0 ? Ui.Style.Secondary : Ui.Style.Ghost; friendsNav.Refresh();
+            groupsNav.style = un > 0 ? Ui.Style.Secondary : Ui.Style.Ghost; groupsNav.Refresh();
         }
 
         void MapCard(string id, string label)
@@ -201,6 +214,8 @@ namespace FortBox
             Select(selected);
             RefreshPlayer();
             RefreshQuests();
+            RefreshBadges();
+            Social.RefreshRequests();
             var _ = RefreshAsync();
             if (Session.Player.Bool("tos_required")) ShowTos();
         }
@@ -244,7 +259,7 @@ namespace FortBox
         async System.Threading.Tasks.Task RefreshAsync()
         {
             await Session.Refresh();
-            if (this != null && gameObject.activeInHierarchy) { RefreshPlayer(); RefreshQuests(); }
+            if (this != null && gameObject.activeInHierarchy) { RefreshPlayer(); RefreshQuests(); RefreshBadges(); }
         }
 
         void RefreshPlayer()

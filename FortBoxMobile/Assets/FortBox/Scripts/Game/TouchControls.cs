@@ -105,7 +105,7 @@ namespace FortBox
             jump = AddPad("jump", "chevron_down", new Vector2(1, 0), new Vector2(-72, 340), 50, Ui.Text2, "JUMP");
             reload = AddPad("reload", "refresh", new Vector2(1, 0), new Vector2(-310, 290), 40, Ui.Text2);
             grenade = AddPad("grenade", "bolt", new Vector2(1, 0), new Vector2(-200, 400), 40, Ui.Amber);
-            weapon = AddPad("weapon", "ammo", new Vector2(1, 0), new Vector2(-64, 60), 40, Ui.Text2);
+            weapon = AddPad("weapon", "ammo", new Vector2(1, 0), new Vector2(-64, 92), 40, Ui.Text2);
             // second fire button top-left, for shooting while steering with the right thumb
             fire2 = AddPad("fire2", "crosshair", new Vector2(0, 1), new Vector2(150, -250), 52, Ui.Orange);
             pause = AddPad("pause", "gear", new Vector2(1, 1), new Vector2(-46, -46), 30, Ui.Text3);

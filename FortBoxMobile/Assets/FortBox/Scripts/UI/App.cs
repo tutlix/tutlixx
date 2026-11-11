@@ -76,6 +76,11 @@ namespace FortBox
             var ov = MakeCanvas("Overlay", 50);
             Overlay = Ui.Node(ov.transform, "overlay").Fill();
 
+            gameObject.AddComponent<AudioListener>();
+            Sfx.Init(gameObject);
+            AppUpdater.Init(gameObject);
+            Sfx.Music(true);
+
             Push.OnMessage += OnPush;
             Push.Start();
             Show<LoginScreen>();
@@ -239,6 +244,12 @@ namespace FortBox
                     if (MatchController.Active != null) MatchController.Active.Quit(false);
                     Toast.Show(data.Str("reason", "Removed from the match"), Ui.Red, 4f);
                     break;
+            }
+            if (type.StartsWith("friend") || type.StartsWith("group_"))
+            {
+                Social.OnPush(type, data);
+                var fs = Current as FriendsScreen;
+                if (fs != null && type != "group_message" && type != "group_typing") fs.Refresh();
             }
             if (MatchController.Active != null) MatchController.Active.OnPush(type, msg, data);
             var lobby = Current as LobbyScreen;

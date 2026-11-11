@@ -1,17 +1,36 @@
-# Builds the FortBox 3D Unity project (FortBoxMobile/) into an Android APK.
+# Builds FortBox3D.apk in the cloud (GitHub Actions + GameCI) from FortBoxMobile/,
+# and on main publishes it to the game server (in-app auto-update) and to the
+# "apk-latest" GitHub release.
 #
-# One-time setup (repo Settings -> Secrets and variables -> Actions):
-#   UNITY_EMAIL     - your Unity account email
-#   UNITY_PASSWORD  - your Unity account password
-#   UNITY_LICENSE   - contents of your Unity_lic.ulf file
-#                     (see https://game.ci/docs/github/activation)
+# Start it from your phone: GitHub app/website -> Actions -> "Build APK" -> Run workflow
+# (the Run button appears once this file is on main). It also runs on every push
+# that changes FortBoxMobile/.
 #
-# Output: the APK is attached to the workflow run as an artifact, and on the
-# main branch it is also published to the "apk-latest" GitHub release.
-name: Build Android APK
+# Repository secrets (Settings -> Secrets and variables -> Actions):
+#   UNITY_EMAIL            your Unity account email
+#   UNITY_PASSWORD         your Unity account password
+#   UNITY_LICENSE          the full text of your Unity_lic.ulf file
+#   ANDROID_KEYSTORE_PASS  the password from Signing/password.txt (same key = updates install)
+#   MOBILE_UPLOAD_TOKEN    (optional) same value as MOBILE_UPLOAD_TOKEN on the game server;
+#                          when set, each main build is published as the new app update
+# Optional repository variable (Settings -> Variables): GAME_SERVER_URL (default http://77.90.42.18:1040)
+name: Build APK
 
 on:
   workflow_dispatch:
+    inputs:
+      notes:
+        description: "What's new (shown in the update prompt)"
+        required: false
+        default: ""
+      required_update:
+        description: "Players must update before playing"
+        type: boolean
+        default: false
+      publish:
+        description: "Publish to the game server as the new update"
+        type: boolean
+        default: true
   push:
     paths:
       - "FortBoxMobile/**"
@@ -24,56 +43,101 @@ concurrency:
   group: build-apk-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PROJECT: FortBoxMobile
+
 jobs:
-  build:
+  android:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
-      - name: Free disk space (Unity Android image is large)
+      - name: Free disk space (Android builds are big)
         uses: jlumbroso/free-disk-space@v1.3.1
         with:
-          android: true
+          android: false
           dotnet: true
           haskell: true
           large-packages: false
           docker-images: false
-          swap-storage: false
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        env:
+          L: ${{ secrets.UNITY_LICENSE }}
+          E: ${{ secrets.UNITY_EMAIL }}
+          P: ${{ secrets.UNITY_PASSWORD }}
+          K: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+        run: |
+          miss=""
+          [ -n "$L" ] || miss="$miss UNITY_LICENSE"
+          [ -n "$E" ] || miss="$miss UNITY_EMAIL"
+          [ -n "$P" ] || miss="$miss UNITY_PASSWORD"
+          if [ -n "$miss" ]; then echo "::error::Missing repository secrets:$miss"; exit 1; fi
+          [ -n "$K" ] || echo "::warning::ANDROID_KEYSTORE_PASS not set - APK will use a debug key and can't auto-update."
+
+      - name: Version
+        id: ver
+        run: |
+          BASE=$(cut -d. -f1-2 "$PROJECT/VERSION" 2>/dev/null || echo 1.0)
+          echo "version=${BASE}.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "Building version ${BASE}.${{ github.run_number }}"
 
       - name: Cache Unity Library
         uses: actions/cache@v4
         with:
           path: FortBoxMobile/Library
           key: Library-Android-${{ hashFiles('FortBoxMobile/Assets/**', 'FortBoxMobile/Packages/**', 'FortBoxMobile/ProjectSettings/**') }}
-          restore-keys: |
-            Library-Android-
+          restore-keys: Library-Android-
 
-      - name: Build APK
+      - name: Build
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          FORTBOX_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
         with:
           projectPath: FortBoxMobile
+          unityVersion: 2022.3.40f1
           targetPlatform: Android
-          unityVersion: auto
-          androidExportType: androidPackage
           buildMethod: FortBox.EditorTools.FortBoxBuild.BuildApk
+          androidExportType: androidPackage
+          customParameters: -fbVersion ${{ steps.ver.outputs.version }} -fbKeystorePass ${{ secrets.ANDROID_KEYSTORE_PASS }}
 
-      - name: Check APK exists
-        run: ls -lh FortBoxMobile/Builds/FortBox3D.apk
-
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FortBox3D-apk
+          name: FortBox3D-${{ steps.ver.outputs.version }}
           path: FortBoxMobile/Builds/FortBox3D.apk
           if-no-files-found: error
 
-      - name: Publish to "apk-latest" release
+      - name: Publish update to the game server
+        if: github.ref == 'refs/heads/main'
+        env:
+          TOKEN: ${{ secrets.MOBILE_UPLOAD_TOKEN }}
+          SERVER: ${{ vars.GAME_SERVER_URL || 'http://77.90.42.18:1040' }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          NOTES: ${{ github.event.inputs.notes || github.event.head_commit.message || '' }}
+          FORCE: ${{ github.event.inputs.required_update == 'true' && '1' || '0' }}
+          PUBLISH: ${{ github.event.inputs.publish || 'true' }}
+        run: |
+          if [ -z "$TOKEN" ] || [ "$PUBLISH" != "true" ]; then
+            echo "Not publishing (MOBILE_UPLOAD_TOKEN not set or publish unchecked)."
+            exit 0
+          fi
+          Q="version=$(python3 -c 'import os,urllib.parse;print(urllib.parse.quote(os.environ["VERSION"]))')"
+          Q="$Q&notes=$(python3 -c 'import os,urllib.parse;print(urllib.parse.quote(os.environ["NOTES"][:1500]))')"
+          Q="$Q&force=$FORCE"
+          curl --fail-with-body -sS -X POST \
+            -H "X-Upload-Token: $TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @FortBoxMobile/Builds/FortBox3D.apk \
+            "$SERVER/mobile/ci-upload?$Q"
+          echo
+          echo "Published FortBox 3D $VERSION"
+
+      - name: Publish to "apk-latest" GitHub release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
@@ -83,5 +147,5 @@ jobs:
           make_latest: false
           files: FortBoxMobile/Builds/FortBox3D.apk
           body: |
-            Latest Android build of FortBox 3D from commit ${{ github.sha }}.
+            FortBox 3D ${{ steps.ver.outputs.version }} (commit ${{ github.sha }}).
             Download FortBox3D.apk and open it on your phone (allow "install unknown apps").

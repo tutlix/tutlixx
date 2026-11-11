@@ -118,7 +118,7 @@ namespace FortBox
 
             // ammo, above the fire button
             ammoPanel = Ui.Panel(root, 0.8f, null);
-            ammoPanel.Box(1, 0, -300, 32, 210, 58);
+            ammoPanel.Box(1, 0, -392, 190, 210, 58);
             ammoText = Ui.Label(ammoPanel, "12 / 12", 26, Ui.Text, TextAnchor.MiddleLeft, Ui.Bold);
             ammoText.rectTransform.Place(0, 0, 1, 1, 14, 18, 8, 0);
             weaponText = Ui.Label(ammoPanel, "PISTOL", 13, Ui.Text3, TextAnchor.MiddleLeft, Ui.Bold);

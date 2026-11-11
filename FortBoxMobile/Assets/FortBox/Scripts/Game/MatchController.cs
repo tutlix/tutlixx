@@ -187,11 +187,14 @@ namespace FortBox
             hud.Announce(pvp ? "PVP ARENA" : Lobby.MapLabel(mapId).ToUpperInvariant(), pvp ? "FIRST TO THE KILL TARGET WINS" : "SURVIVE THE WAVES", 3f);
             hud.ShowPause(false, () => Quit(true));
             Push.TryIdentify();
+            Sfx.Duck(true);
         }
 
         public void Quit(bool backToMenu)
         {
             if (Active == this) Active = null;
+            Sfx.StopLoops();
+            Sfx.Duck(false);
             if (!ended) Quests.Report("session_ended");
             Quests.Report("play_time", Mathf.RoundToInt(Time.time - startedAt));
             int sid = serverId;
@@ -332,9 +335,11 @@ namespace FortBox
                     if (lastHealth >= 0 && health < lastHealth)
                     {
                         hud.Damage(lastHealth - health);
+                        Sfx.Play("hurt", 0.8f, Random.Range(0.9f, 1.1f), 0.12f);
                         shake = Mathf.Min(1f, shake + 0.35f);
                     }
                     lastHealth = health;
+                    if (wasAlive && !alive && havePos) Sfx.Play("game_over", 0.9f);
                     if (!havePos || !wasAlive && alive) { px = x; py = y; havePos = true; }
                     else
                     {
@@ -398,7 +403,7 @@ namespace FortBox
                 m.seenAt = now;
             }
             foreach (var k in new List<string>(bots.Keys)) if (!seenB.Contains(k)) bots.Remove(k);
-            if (hitSomething) hud.HitMarker(false);
+            if (hitSomething) { hud.HitMarker(false); Sfx.Play("hit", 0.7f, 1f, 0.06f); }
 
             // bullets: those that vanished hit something -> sparks
             var newPos = new Dictionary<string, Vector2>();
@@ -409,7 +414,15 @@ namespace FortBox
                 if (b == null) continue;
                 var sh = new Shot { id = b.Str("id"), owner = b.Str("owner"), p = new Vector2((float)b.Num("x"), (float)b.Num("y")), v = new Vector2((float)b.Num("vx"), (float)b.Num("vy")) };
                 bullets.Add(sh);
-                if (!string.IsNullOrEmpty(sh.id)) newPos[sh.id] = sh.p + sh.v;
+                if (!string.IsNullOrEmpty(sh.id))
+                {
+                    newPos[sh.id] = sh.p + sh.v;
+                    if (!lastBulletPos.ContainsKey(sh.id) && !string.IsNullOrEmpty(sh.owner) && sh.owner != Session.Username)
+                    {
+                        Mover om;
+                        Sfx.ShotAt(others.TryGetValue(sh.owner, out om) ? om.weapon : "Pistol", Vector2.Distance(sh.p, new Vector2(px + 16, py + 16)));
+                    }
+                }
             }
             foreach (var kv in lastBulletPos)
                 if (!newPos.ContainsKey(kv.Key) && Near(kv.Value, 1600f))
@@ -417,6 +430,7 @@ namespace FortBox
             lastBulletPos.Clear();
             foreach (var kv in newPos) lastBulletPos[kv.Key] = kv.Value;
 
+            var prevEnemy = new List<Shot>(enemyShots);
             enemyShots.Clear();
             int n = 0;
             foreach (var o in s.L("enemy_bullets"))
@@ -424,6 +438,16 @@ namespace FortBox
                 var b = o as Dictionary<string, object>;
                 if (b == null || n++ > 500) continue;
                 enemyShots.Add(new Shot { owner = b.Str("k"), p = new Vector2((float)b.Num("x"), (float)b.Num("y")), v = new Vector2((float)b.Num("vx"), (float)b.Num("vy")) });
+            }
+            var meP = new Vector2(px + 16, py + 16);
+            foreach (var es in enemyShots)
+            {
+                float d = Vector2.Distance(es.p, meP);
+                if (d > 1300f) continue;
+                bool seen = false;
+                foreach (var ps in prevEnemy)
+                    if ((ps.p - es.p).sqrMagnitude < (es.v.sqrMagnitude * 3f + 64f)) { seen = true; break; }
+                if (!seen) { Sfx.Play(es.owner == "heavy" || es.owner == "boss" ? "smg" : "shoot", 0.35f * Sfx.Falloff(d), Random.Range(0.8f, 0.95f), 0.07f); }
             }
             nades.Clear();
             foreach (var o in s.L("grenades"))
@@ -446,6 +470,7 @@ namespace FortBox
                 if (!still && Vector2.Distance(old.p, new Vector2(px + 16, py + 16)) < 48f)
                 {
                     Quests.Report("powerup_collected");
+                    Sfx.Play("pickup", 0.9f);
                     hud.Announce(PowerLabel(old.type), "", 1.6f);
                 }
             }
@@ -491,6 +516,7 @@ namespace FortBox
                             if (u == Session.Username)
                             {
                                 hud.HitMarker(true);
+                                Sfx.Play("kill", 0.8f);
                                 Quests.Report("enemy_killed");
                                 if (et == "boss") Quests.Report("boss_killed");
                                 if (et != "scout" && et != "soldier") Quests.Report("special_killed");
@@ -513,7 +539,7 @@ namespace FortBox
                         {
                             string k = e.Str("k"), v = e.Str("v");
                             hud.Feed((string.IsNullOrEmpty(k) ? "?" : k) + " eliminated " + v, k == Session.Username ? Ui.Orange : Ui.C(235, 235, 235));
-                            if (k == Session.Username) { hud.HitMarker(true); Quests.Report("enemy_killed"); Quests.Report("streak_reached", killStreak); }
+                            if (k == Session.Username) { hud.HitMarker(true); Sfx.Play("kill", 0.8f); Quests.Report("enemy_killed"); Quests.Report("streak_reached", killStreak); }
                             break;
                         }
                     case "respawn":
@@ -524,6 +550,7 @@ namespace FortBox
                             float x = (float)e.Num("x"), y = (float)e.Num("y"), r = (float)e.Num("r", 110);
                             fx.Explosion(x, y, r);
                             float d = Vector2.Distance(new Vector2(x, y), new Vector2(px + 16, py + 16));
+                            Sfx.Explosion(d);
                             if (d < 600f) shake = Mathf.Min(1f, shake + (1f - d / 600f) * 0.8f);
                             break;
                         }
@@ -531,6 +558,7 @@ namespace FortBox
                         {
                             float x = (float)e.Num("x"), y = (float)e.Num("y");
                             fx.Explosion(x, y, (float)e.Num("r", 120));
+                            Sfx.Explosion(Vector2.Distance(new Vector2(x, y), new Vector2(px + 16, py + 16)));
                             break;
                         }
                     case "wev":
@@ -547,6 +575,8 @@ namespace FortBox
         {
             if (ended) return;
             ended = true;
+            Sfx.StopLoops();
+            Sfx.Play("game_over", 1f);
             Quests.Report("session_ended");
             Quests.Report("wave_reached", d.Int("wave"));
             if (d.Bool("pvp") && d.Str("winner") == Session.Username) Quests.Report("mode_won");
@@ -623,7 +653,7 @@ namespace FortBox
             if (TouchControls.PausePressed) hud.ShowPause(true, null);
             if (!paused)
             {
-                if (TouchControls.JumpPressed && jumpT < 0f && alive) jumpT = 0f;
+                if (TouchControls.JumpPressed && jumpT < 0f && alive) { jumpT = 0f; Sfx.Play("jump", 0.6f); }
                 if (TouchControls.WeaponPressed && weapons.Count > 1)
                 {
                     int i = weapons.IndexOf(weapon);
@@ -681,6 +711,7 @@ namespace FortBox
             if (canShoot && now - lastShot >= delay)
             {
                 lastShot = now;
+                Sfx.Shoot(weapon);
                 if (melee) swingT = 0f;
                 else if (!cfg.Bool("infinite_ammo")) mag = Mathf.Max(0, mag - 1);
                 shake = Mathf.Min(1f, shake + (melee ? 0.05f : 0.08f));
