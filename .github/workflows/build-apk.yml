@@ -1,0 +1,87 @@
+# Builds the FortBox 3D Unity project (FortBoxMobile/) into an Android APK.
+#
+# One-time setup (repo Settings -> Secrets and variables -> Actions):
+#   UNITY_EMAIL     - your Unity account email
+#   UNITY_PASSWORD  - your Unity account password
+#   UNITY_LICENSE   - contents of your Unity_lic.ulf file
+#                     (see https://game.ci/docs/github/activation)
+#
+# Output: the APK is attached to the workflow run as an artifact, and on the
+# main branch it is also published to the "apk-latest" GitHub release.
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "FortBoxMobile/**"
+      - ".github/workflows/build-apk.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Free disk space (Unity Android image is large)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: false
+          swap-storage: false
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: FortBoxMobile/Library
+          key: Library-Android-${{ hashFiles('FortBoxMobile/Assets/**', 'FortBoxMobile/Packages/**', 'FortBoxMobile/ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Build APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: FortBoxMobile
+          targetPlatform: Android
+          unityVersion: auto
+          androidExportType: androidPackage
+          buildMethod: FortBox.EditorTools.FortBoxBuild.BuildApk
+
+      - name: Check APK exists
+        run: ls -lh FortBoxMobile/Builds/FortBox3D.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FortBox3D-apk
+          path: FortBoxMobile/Builds/FortBox3D.apk
+          if-no-files-found: error
+
+      - name: Publish to "apk-latest" release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: FortBox 3D APK (latest build)
+          prerelease: true
+          make_latest: false
+          files: FortBoxMobile/Builds/FortBox3D.apk
+          body: |
+            Latest Android build of FortBox 3D from commit ${{ github.sha }}.
+            Download FortBox3D.apk and open it on your phone (allow "install unknown apps").
